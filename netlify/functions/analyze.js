@@ -18,20 +18,20 @@ exports.handler = async (event) => {
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-
   if (!apiKey) {
     return {
       statusCode: 500,
       headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
-      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY no configurada en Netlify Environment variables.' })
+      body: JSON.stringify({ error: 'ANTHROPIC_API_KEY no configurada.' })
     };
   }
 
   try {
     const incoming = JSON.parse(event.body);
+
     const payload = JSON.stringify({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 2500,
+      model: 'claude-haiku-4-5-20251001',
+      max_tokens: 1000,
       messages: incoming.messages
     });
 
@@ -58,10 +58,7 @@ exports.handler = async (event) => {
 
     return {
       statusCode: result.status,
-      headers: {
-        'Content-Type': 'application/json',
-        'Access-Control-Allow-Origin': '*'
-      },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: result.body
     };
 
