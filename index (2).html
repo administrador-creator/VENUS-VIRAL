@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Viral Content Radar — Venus Impact</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --surface: #12121a; --surface2: #1a1a26;
+    --border: rgba(255,255,255,0.07); --border-hover: rgba(255,255,255,0.15);
+    --text: #f0eff8; --text-muted: #7a7990; --text-dim: #4a4860;
+    --accent: #7c6ff7; --accent-dim: rgba(124,111,247,0.12); --accent-border: rgba(124,111,247,0.35);
+  }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: 'DM Sans', sans-serif; min-height: 100vh; overflow-x: hidden; }
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background-image: linear-gradient(rgba(124,111,247,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(124,111,247,0.03) 1px, transparent 1px);
+    background-size: 60px 60px; pointer-events: none; z-index: 0;
+  }
+  .wrapper { position: relative; z-index: 1; max-width: 820px; margin: 0 auto; padding: 0 24px 80px; }
+  header { padding: 48px 0 40px; border-bottom: 1px solid var(--border); margin-bottom: 48px; display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; flex-wrap: wrap; }
+  .logo { font-family: 'DM Serif Display', serif; font-size: 13px; letter-spacing: 0.15em; color: var(--accent); text-transform: uppercase; margin-bottom: 16px; }
+  header h1 { font-family: 'DM Serif Display', serif; font-size: clamp(32px, 5vw, 48px); font-weight: 400; line-height: 1.1; letter-spacing: -0.02em; }
+  header h1 em { font-style: italic; color: var(--accent); }
+  .header-sub { font-size: 14px; color: var(--text-muted); max-width: 340px; line-height: 1.6; text-align: right; }
+  .section-label { font-size: 10px; font-weight: 600; letter-spacing: 0.2em; text-transform: uppercase; color: var(--text-dim); margin-bottom: 14px; }
+  .sector-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 8px; margin-bottom: 20px; }
+  .sector-btn { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 8px; cursor: pointer; text-align: center; transition: all 0.2s; font-size: 12px; color: var(--text-muted); font-family: 'DM Sans', sans-serif; position: relative; overflow: hidden; }
+  .sector-btn::before { content: ''; position: absolute; inset: 0; background: var(--accent-dim); opacity: 0; transition: opacity 0.2s; }
+  .sector-btn:hover { border-color: var(--border-hover); color: var(--text); }
+  .sector-btn:hover::before { opacity: 1; }
+  .sector-btn.active { border-color: var(--accent-border); color: var(--accent); }
+  .sector-btn.active::before { opacity: 1; }
+  .sector-icon { font-size: 22px; display: block; margin-bottom: 8px; position: relative; }
+  .sector-name { position: relative; font-size: 11px; line-height: 1.3; }
+  .custom-row { display: flex; gap: 8px; margin-bottom: 36px; margin-top: 4px; }
+  .custom-input { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px; font-size: 14px; font-family: 'DM Sans', sans-serif; color: var(--text); outline: none; transition: border-color 0.2s; }
+  .custom-input::placeholder { color: var(--text-dim); }
+  .custom-input:focus { border-color: var(--accent-border); }
+  .divider { height: 1px; background: var(--border); margin: 36px 0; }
+  .platform-row { display: flex; gap: 10px; margin-bottom: 36px; flex-wrap: wrap; }
+  .platform-btn { display: flex; align-items: center; gap: 8px; padding: 10px 20px; border-radius: 999px; border: 1px solid var(--border); cursor: pointer; font-size: 13px; font-family: 'DM Sans', sans-serif; font-weight: 500; background: var(--surface); color: var(--text-muted); transition: all 0.2s; }
+  .platform-btn.active-tt { background: #1a1a1a; color: #fff; border-color: #333; }
+  .platform-btn.active-ig { background: linear-gradient(135deg, rgba(225,48,108,0.2), rgba(131,58,180,0.2)); color: #e879aa; border-color: rgba(225,48,108,0.3); }
+  .platform-dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .analyze-btn { width: 100%; padding: 18px 24px; background: var(--accent); color: #fff; border: none; border-radius: 12px; font-size: 15px; font-weight: 500; font-family: 'DM Sans', sans-serif; cursor: pointer; transition: all 0.2s; margin-bottom: 48px; }
+  .analyze-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(124,111,247,0.35); }
+  .analyze-btn:disabled { background: var(--surface2); color: var(--text-dim); cursor: not-allowed; }
+  .results { display: none; }
+  .results-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; flex-wrap: wrap; gap: 10px; }
+  .results-title { font-family: 'DM Serif Display', serif; font-size: 22px; font-weight: 400; }
+  .badge { font-size: 11px; padding: 4px 12px; border-radius: 999px; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent-border); font-weight: 500; letter-spacing: 0.05em; }
+  .video-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 20px 22px; margin-bottom: 12px; transition: all 0.2s; animation: fadeUp 0.4s ease both; }
+  .video-card:hover { border-color: var(--border-hover); transform: translateY(-2px); }
+  @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+  .video-card:nth-child(1){animation-delay:.05s} .video-card:nth-child(2){animation-delay:.1s} .video-card:nth-child(3){animation-delay:.15s} .video-card:nth-child(4){animation-delay:.2s} .video-card:nth-child(5){animation-delay:.25s} .video-card:nth-child(6){animation-delay:.3s}
+  .card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+  .card-title { font-size: 15px; font-weight: 500; line-height: 1.4; flex: 1; }
+  .plat-badge { font-size: 10px; font-weight: 600; padding: 4px 10px; border-radius: 999px; letter-spacing: 0.08em; white-space: nowrap; flex-shrink: 0; }
+  .plat-badge.tt { background: #1a1a1a; color: #fff; border: 1px solid #333; }
+  .plat-badge.ig { background: linear-gradient(135deg, rgba(225,48,108,0.15), rgba(131,58,180,0.15)); color: #e879aa; border: 1px solid rgba(225,48,108,0.25); }
+  .card-structure { font-size: 13px; color: var(--text-muted); line-height: 1.7; margin-bottom: 10px; }
+  .card-why { font-size: 12px; color: var(--text-dim); line-height: 1.6; margin-bottom: 14px; padding-left: 12px; border-left: 2px solid var(--accent-border); font-style: italic; }
+  .card-footer { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 12px; border-top: 1px solid var(--border); }
+  .tag { font-size: 11px; padding: 4px 10px; background: var(--surface2); border: 1px solid var(--border); border-radius: 999px; color: var(--text-muted); }
+  .tag.stat { color: var(--accent); background: var(--accent-dim); border-color: var(--accent-border); }
+  .insights-box { margin-top: 28px; background: linear-gradient(135deg, rgba(124,111,247,0.06), rgba(201,168,76,0.04)); border: 1px solid var(--accent-border); border-radius: 14px; padding: 22px 24px; }
+  .insights-icon { width: 28px; height: 28px; border-radius: 8px; background: var(--accent-dim); border: 1px solid var(--accent-border); display: inline-flex; align-items: center; justify-content: center; font-size: 14px; color: var(--accent); margin-right: 10px; vertical-align: middle; }
+  .insights-title { font-size: 14px; font-weight: 500; color: var(--accent); vertical-align: middle; }
+  .insights-list { list-style: none; margin-top: 16px; display: grid; gap: 10px; }
+  .insights-list li { font-size: 13px; color: var(--text-muted); line-height: 1.6; padding-left: 18px; position: relative; }
+  .insights-list li::before { content: '→'; position: absolute; left: 0; color: var(--accent); font-size: 12px; }
+  .reset-btn { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--text-dim); background: none; border: 1px solid var(--border); border-radius: 999px; padding: 6px 14px; cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.2s; }
+  .reset-btn:hover { border-color: var(--border-hover); color: var(--text-muted); }
+  footer { text-align: center; padding: 40px 0 20px; border-top: 1px solid var(--border); font-size: 12px; color: var(--text-dim); }
+  footer span { color: var(--accent); }
+  @media(max-width:480px){ header{flex-direction:column;align-items:flex-start} .header-sub{text-align:left} .sector-grid{grid-template-columns:repeat(3,1fr)} }
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div>
+      <img src="data:image/png;base64,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" alt="Venus Consulting" style="height:48px;margin-bottom:16px;display:block;">
+      <h1>Viral Content<br><em>Radar</em></h1>
+    </div>
+    <div class="header-sub">Detecta qué estructuras de video están funcionando en tu sector ahora mismo.</div>
+  </header>
+
+  <div class="section-label">Selecciona tu sector</div>
+  <div class="sector-grid" id="sectorGrid">
+    <button class="sector-btn" data-sector="restaurantes"><span class="sector-icon">🍽️</span><span class="sector-name">Restaurantes</span></button>
+    <button class="sector-btn" data-sector="estetica"><span class="sector-icon">💆</span><span class="sector-name">Estética</span></button>
+    <button class="sector-btn" data-sector="inmobiliaria"><span class="sector-icon">🏠</span><span class="sector-name">Inmobiliaria</span></button>
+    <button class="sector-btn" data-sector="solar"><span class="sector-icon">☀️</span><span class="sector-name">Solar</span></button>
+    <button class="sector-btn" data-sector="fitness"><span class="sector-icon">💪</span><span class="sector-name">Fitness</span></button>
+    <button class="sector-btn" data-sector="moda"><span class="sector-icon">👗</span><span class="sector-name">Moda</span></button>
+    <button class="sector-btn" data-sector="educacion"><span class="sector-icon">🎓</span><span class="sector-name">Educación</span></button>
+    <button class="sector-btn" data-sector="legal"><span class="sector-icon">⚖️</span><span class="sector-name">Legal</span></button>
+    <button class="sector-btn" data-sector="ecommerce"><span class="sector-icon">🛒</span><span class="sector-name">E-commerce</span></button>
+    <button class="sector-btn" data-sector="salud"><span class="sector-icon">🏥</span><span class="sector-name">Salud</span></button>
+    <button class="sector-btn" data-sector="viajes"><span class="sector-icon">✈️</span><span class="sector-name">Viajes</span></button>
+    <button class="sector-btn" data-sector="tecnologia"><span class="sector-icon">💻</span><span class="sector-name">Tecnología</span></button>
+    <button class="sector-btn" data-sector="arquitectura"><span class="sector-icon">🏛️</span><span class="sector-name">Arquitectura</span></button>
+    <button class="sector-btn" data-sector="coaching"><span class="sector-icon">🧠</span><span class="sector-name">Coaching</span></button>
+    <button class="sector-btn" data-sector="mascotas"><span class="sector-icon">🐾</span><span class="sector-name">Mascotas</span></button>
+    <button class="sector-btn" data-sector="reformas"><span class="sector-icon">🔨</span><span class="sector-name">Reformas</span></button>
+  </div>
+
+  <div class="section-label">O escribe tu sector</div>
+  <div class="custom-row">
+    <input type="text" class="custom-input" id="customSector" placeholder="Ej: Talleres mecánicos, Academia de baile..."/>
+  </div>
+
+  <div class="divider"></div>
+
+  <div class="section-label">Plataformas</div>
+  <div class="platform-row">
+    <button class="platform-btn active-tt" id="btnTT" onclick="togglePlatform('tiktok')"><span class="platform-dot"></span>TikTok</button>
+    <button class="platform-btn active-ig" id="btnIG" onclick="togglePlatform('instagram')"><span class="platform-dot"></span>Instagram Reels</button>
+  </div>
+
+  <button class="analyze-btn" id="analyzeBtn" disabled onclick="showResults()">Selecciona un sector para comenzar</button>
+
+  <div class="results" id="results">
+    <div class="results-meta">
+      <div class="results-title" id="resultsTitle"></div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span class="badge" id="resultsBadge"></span>
+        <button class="reset-btn" onclick="resetSearch()">↩ Nueva búsqueda</button>
+      </div>
+    </div>
+    <div id="cardsContainer"></div>
+    <div class="insights-box" id="insightsBox">
+      <span class="insights-icon">◈</span>
+      <span class="insights-title">Patrones detectados en el sector</span>
+      <ul class="insights-list" id="insightsList"></ul>
+    </div>
+  </div>
+
+  <footer>Powered by <span>Venus Consulting</span> · Tendencias actualizadas 2025</footer>
+</div>
+
+<script>
+const DATA = {
+  restaurantes: {
+    label: "Restaurantes y gastronomía",
+    videos: [
+      { titulo: "El proceso completo de un plato en 30 segundos", plataforma: "TikTok", estructura: "GANCHO: Ingrediente crudo en primer plano → DESARROLLO: Timelapse de elaboración con sonidos ASMR → CIERRE: Plato terminado con precio en pantalla y dirección", duracion: "15-30 seg", tags: ["cocina en directo","ASMR","timelapse"], viralidad: "El sonido y la transformación visual activan dopamina. La gente comparte lo que le da hambre.", vistas: "500K-5M" },
+      { titulo: "Comparativa: lo que ves vs lo que te llega a casa", plataforma: "Instagram", estructura: "GANCHO: Foto de publicidad perfecta → DESARROLLO: Giro cómico mostrando la realidad → CIERRE: 'Nosotros sí somos diferentes, mira' + tu plato real", duracion: "15 seg", tags: ["humor","expectativa vs realidad","delivery"], viralidad: "El contraste genera reacción inmediata. Combina humor con diferenciación.", vistas: "200K-2M" },
+      { titulo: "Un día en la cocina del chef", plataforma: "TikTok", estructura: "GANCHO: '6am en mi restaurante, nadie sabe lo que pasa aquí' → DESARROLLO: Behind the scenes real, caótico y auténtico → CIERRE: El servicio listo, resultado final", duracion: "45-60 seg", tags: ["behind the scenes","autenticidad","día a día"], viralidad: "La autenticidad y el esfuerzo visible generan respeto y conexión emocional.", vistas: "1M-10M" },
+      { titulo: "El plato más pedido esta semana y por qué", plataforma: "Instagram", estructura: "GANCHO: 'Este plato lo hemos vendido 200 veces esta semana' → DESARROLLO: Elaboración + testimonio de cliente → CIERRE: Precio + CTA reserva", duracion: "30 seg", tags: ["prueba social","trending","recomendación"], viralidad: "La prueba social masiva elimina la duda. Si 200 personas lo pidieron, algo tendrá.", vistas: "100K-800K" },
+      { titulo: "Reacción del chef a críticas de Google", plataforma: "TikTok", estructura: "GANCHO: 'Respondiendo a mis peores reseñas de Google' → DESARROLLO: Leer reseñas reales con humor y honestidad → CIERRE: Invitación a venir y juzgar en persona", duracion: "30-45 seg", tags: ["humor","transparencia","reseñas"], viralidad: "El humor defensivo humaniza la marca. Las personas defienden negocios honestos.", vistas: "500K-8M" },
+      { titulo: "Precio real vs trabajo real", plataforma: "Instagram", estructura: "GANCHO: '¿Por qué cuesta 18€ este plato?' → DESARROLLO: Desglose de ingredientes, tiempo y coste real → CIERRE: 'Ahora tú decides si es caro'", duracion: "30 seg", tags: ["educación","transparencia","precio justo"], viralidad: "Justificar el precio con datos convierte objeciones en admiración.", vistas: "300K-3M" }
+    ],
+    patrones: [
+      "Los videos con sonido ASMR de cocina multiplican x3 el tiempo de visualización",
+      "El behind the scenes auténtico supera en engagement a los videos producidos profesionalmente",
+      "Mostrar el precio en pantalla aumenta las conversiones directas desde el video",
+      "El humor dirigido a situaciones del sector (delivery, reseñas) dispara los shares",
+      "Los timelapses de elaboración generan el mayor porcentaje de guardados"
+    ]
+  },
+  estetica: {
+    label: "Clínicas estéticas y belleza",
+    videos: [
+      { titulo: "Antes y después en tiempo real", plataforma: "TikTok", estructura: "GANCHO: Cliente sentado con problema visible → DESARROLLO: El tratamiento en timelapse real → CIERRE: Resultado inmediato + reacción del cliente", duracion: "30-60 seg", tags: ["transformación","resultado real","testimonio"], viralidad: "El cambio visual instantáneo es el contenido más compartido en belleza. Activa el deseo inmediato.", vistas: "1M-20M" },
+      { titulo: "Lo que nadie te cuenta sobre este tratamiento", plataforma: "Instagram", estructura: "GANCHO: 'La verdad sobre el botox que las clínicas no dicen' → DESARROLLO: Desmontando mitos con evidencia real → CIERRE: Cómo hacerlo bien + CTA consulta gratuita", duracion: "45 seg", tags: ["educación","mitos","confianza"], viralidad: "Romper mitos posiciona como experto honesto y genera confianza masiva.", vistas: "500K-5M" },
+      { titulo: "Un día de tratamientos en la clínica", plataforma: "TikTok", estructura: "GANCHO: '8 tratamientos hoy, te muestro todos' → DESARROLLO: Clips de 3 segundos de cada tratamiento con texto → CIERRE: 'Reserva tu consulta gratuita'", duracion: "30-45 seg", tags: ["variedad","volumen","behind the scenes"], viralidad: "Mostrar variedad y volumen transmite experiencia y demanda. Crea FOMO.", vistas: "200K-2M" },
+      { titulo: "Reacción de la clienta al ver el resultado", plataforma: "Instagram", estructura: "GANCHO: Clienta con los ojos cerrados → DESARROLLO: Suspense hasta que abre los ojos → CIERRE: Reacción emocional real + datos del tratamiento", duracion: "20-30 seg", tags: ["emoción","reacción","testimonio real"], viralidad: "Las emociones auténticas generan empatía. El espectador imagina su propia reacción.", vistas: "500K-10M" },
+      { titulo: "Cuánto dura realmente cada tratamiento", plataforma: "TikTok", estructura: "GANCHO: 'Te dicen que dura 1 año. La realidad:' → DESARROLLO: Comparativa honesta de duraciones reales → CIERRE: Qué factores influyen + consulta personalizada", duracion: "30 seg", tags: ["honestidad","educación","duración"], viralidad: "La honestidad sobre expectativas genera confianza y reduce quejas post-venta.", vistas: "300K-4M" },
+      { titulo: "Precio desglosado de un tratamiento premium", plataforma: "Instagram", estructura: "GANCHO: '¿Por qué cuesta 800€ este tratamiento?' → DESARROLLO: Material, tiempo, cualificación, tecnología → CIERRE: Comparativa con clínicas baratas", duracion: "45 seg", tags: ["precio","valor","diferenciación"], viralidad: "Justificar precio premium con datos convierte precio en inversión percibida.", vistas: "200K-2M" }
+    ],
+    patrones: [
+      "Los antes y después son el formato con mayor tasa de guardado en todo el sector belleza",
+      "Los videos que desmientan mitos generan el doble de comentarios y shares",
+      "Mostrar la reacción emocional del cliente multiplica x4 el engagement vs mostrar solo el resultado",
+      "El contenido educativo sobre duraciones y precios reduce objeciones en consulta",
+      "TikTok supera a Instagram en alcance orgánico para este sector en un 60%"
+    ]
+  },
+  inmobiliaria: {
+    label: "Inmobiliaria y real estate",
+    videos: [
+      { titulo: "Tour de piso en 60 segundos estilo cinematográfico", plataforma: "TikTok", estructura: "GANCHO: Fachada exterior con música épica → DESARROLLO: Tour fluido habitación por habitación con datos en pantalla → CIERRE: Precio + CTA llamada directa", duracion: "45-60 seg", tags: ["tour","cinematográfico","precio visible"], viralidad: "La calidad cinematográfica diferencia y el precio visible elimina timewasters.", vistas: "100K-2M" },
+      { titulo: "Lo que NO te dicen al comprar un piso", plataforma: "Instagram", estructura: "GANCHO: 'Llevo 10 años en inmobiliaria y hay cosas que callamos' → DESARROLLO: 3 errores graves que cometen los compradores → CIERRE: 'Antes de firmar, habla conmigo'", duracion: "45 seg", tags: ["educación","errores","confianza"], viralidad: "Posicionarse como el agente honesto genera leads cualificados de alta intención.", vistas: "500K-5M" },
+      { titulo: "Comparativa de barrios: mismo precio, diferente vida", plataforma: "TikTok", estructura: "GANCHO: 'Con 300K en Madrid puedes vivir aquí... o aquí' → DESARROLLO: Comparativa de dos zonas con imágenes reales → CIERRE: 'Cuál elegiríais, comenta'", duracion: "30-45 seg", tags: ["comparativa","barrios","debate"], viralidad: "Los debates en comentarios disparan el alcance del algoritmo exponencialmente.", vistas: "300K-5M" },
+      { titulo: "Así quedó este piso antes y después de la reforma", plataforma: "Instagram", estructura: "GANCHO: Piso en mal estado → DESARROLLO: Timelapse de reforma + costes reales → CIERRE: Precio de venta y rentabilidad obtenida", duracion: "30-45 seg", tags: ["reforma","inversión","transformación"], viralidad: "La rentabilidad visible convierte espectadores en inversores interesados.", vistas: "200K-3M" },
+      { titulo: "Un día trabajando como agente inmobiliario real", plataforma: "TikTok", estructura: "GANCHO: '6am, primera visita del día' → DESARROLLO: Day in the life real con momentos buenos y malos → CIERRE: 'Si quieres vender tu piso, sé lo que hace falta'", duracion: "60 seg", tags: ["autenticidad","día a día","humanización"], viralidad: "Humanizar la profesión genera confianza y diferencia del agente tradicional.", vistas: "200K-3M" },
+      { titulo: "Errores que te hacen perder miles al vender tu piso", plataforma: "Instagram", estructura: "GANCHO: 'Estos 3 errores le costaron 40.000€ a un cliente' → DESARROLLO: Casos reales anonimizados con cifras → CIERRE: 'Valoración gratuita antes de poner precio'", duracion: "45 seg", tags: ["errores","pérdidas","urgencia"], viralidad: "El miedo a perder dinero es el motivador más potente en decisiones de compraventa.", vistas: "400K-5M" }
+    ],
+    patrones: [
+      "Los videos con precio visible desde el principio filtran leads y aumentan la calidad de contactos",
+      "El contenido educativo sobre errores genera más leads que el contenido de venta directa",
+      "Los debates en comentarios (¿qué barrio elegiríais?) multiplican el alcance orgánico x5",
+      "Los tours cinematográficos de 60 segundos tienen mayor tasa de contacto que los de 3 minutos",
+      "Mostrar cifras reales (pérdidas, ganancias) genera 3x más guardados que el contenido genérico"
+    ]
+  },
+  solar: {
+    label: "Energía solar y renovables",
+    videos: [
+      { titulo: "Cuánto me ahorro al mes con placas solares — datos reales", plataforma: "TikTok", estructura: "GANCHO: 'Mi factura de luz era 280€. Ahora mira' → DESARROLLO: Mostrar factura real antes y después → CIERRE: 'Calcula tu ahorro gratis'", duracion: "30 seg", tags: ["ahorro real","factura","prueba social"], viralidad: "Los datos económicos reales son irrefutables. El ahorro concreto genera acción inmediata.", vistas: "500K-8M" },
+      { titulo: "Instalación completa en timelapse — de 0 a funcionando", plataforma: "Instagram", estructura: "GANCHO: Tejado vacío → DESARROLLO: Timelapse de instalación completa en 30 segundos → CIERRE: Primera lectura del contador + datos del sistema", duracion: "30-45 seg", tags: ["timelapse","instalación","proceso"], viralidad: "Ver el proceso completo elimina miedos y objeciones sobre la instalación.", vistas: "200K-3M" },
+      { titulo: "¿En cuántos años se amortiza? Cálculo real", plataforma: "TikTok", estructura: "GANCHO: 'La pregunta que todos hacen: ¿cuándo recupero la inversión?' → DESARROLLO: Cálculo real con variables de consumo y precio → CIERRE: 'El tuyo puede ser menos. Calcula aquí'", duracion: "45 seg", tags: ["amortización","ROI","cálculo"], viralidad: "Responder la objeción número 1 en video elimina la barrera principal de compra.", vistas: "300K-4M" },
+      { titulo: "Lo que las eléctricas no quieren que sepas", plataforma: "TikTok", estructura: "GANCHO: 'Por qué las eléctricas odian las placas solares' → DESARROLLO: Datos sobre subidas de luz vs coste solar → CIERRE: 'Tú decides de quién dependes'", duracion: "30-45 seg", tags: ["electricas","independencia","datos"], viralidad: "El framing de David vs Goliat (tú vs la eléctrica) genera identificación y shares masivos.", vistas: "1M-15M" },
+      { titulo: "Casa con 0€ en luz en verano — tour completo", plataforma: "Instagram", estructura: "GANCHO: 'Julio, 35 grados, aire acondicionado todo el día: 0€ de luz' → DESARROLLO: Tour por la instalación y datos del sistema → CIERRE: Contacto para presupuesto gratuito", duracion: "45-60 seg", tags: ["verano","ahorro extremo","tour"], viralidad: "El caso extremo positivo crea el deseo máximo. 0€ es un titular irresistible.", vistas: "500K-6M" },
+      { titulo: "Preguntas y respuestas: todo lo que tienes miedo de preguntar", plataforma: "TikTok", estructura: "GANCHO: 'Las 5 preguntas que nadie se atreve a hacer sobre placas' → DESARROLLO: Respuestas directas y honestas a miedos reales → CIERRE: 'Si tienes más, escríbeme'", duracion: "60 seg", tags: ["FAQ","miedos","confianza"], viralidad: "Responder miedos no expresados genera confianza masiva y comentarios de seguimiento.", vistas: "200K-3M" }
+    ],
+    patrones: [
+      "Los datos económicos reales (facturas, cifras) generan 5x más leads que las promesas genéricas",
+      "El framing 'vs las eléctricas' es el que mayor alcance orgánico consigue en TikTok",
+      "Los timelapses de instalación reducen la tasa de abandono del proceso de venta",
+      "Responder la objeción de amortización en video acorta el ciclo de venta un 40%",
+      "Los casos extremos de ahorro (0€ en verano) se comparten masivamente entre familiares"
+    ]
+  },
+  fitness: {
+    label: "Gimnasios y fitness",
+    videos: [
+      { titulo: "Transformación de 90 días — semana a semana", plataforma: "TikTok", estructura: "GANCHO: Foto inicial vs foto final lado a lado → DESARROLLO: Montaje semanal con datos de peso y medidas → CIERRE: 'Tu transformación empieza aquí'", duracion: "30-45 seg", tags: ["transformación","resultados","motivación"], viralidad: "Las transformaciones físicas son el contenido más compartido en fitness. Generan esperanza.", vistas: "1M-20M" },
+      { titulo: "El error que comete el 90% en el gimnasio", plataforma: "Instagram", estructura: "GANCHO: 'Llevas meses sin resultados porque haces esto' → DESARROLLO: Error específico con explicación técnica visual → CIERRE: 'La forma correcta es así' + CTA prueba gratuita", duracion: "30 seg", tags: ["errores","técnica","educación"], viralidad: "La corrección de errores genera ego threat — la gente comparte para avisar a sus conocidos.", vistas: "500K-8M" },
+      { titulo: "Un día de entreno real sin filtros", plataforma: "TikTok", estructura: "GANCHO: '5am, antes del trabajo, así empiezo el día' → DESARROLLO: Rutina real sin glamour, con esfuerzo visible → CIERRE: 'Si yo puedo, tú también. Primera clase gratis'", duracion: "45-60 seg", tags: ["autenticidad","rutina real","motivación"], viralidad: "La autenticidad sin filtros conecta con personas que se sienten intimidadas por el fitness.", vistas: "300K-5M" },
+      { titulo: "Lo que cuesta un gym vs lo que te cuesta no ir", plataforma: "Instagram", estructura: "GANCHO: 'Gastas más en café al mes que en tu salud' → DESARROLLO: Comparativa de costes: gym vs médico, gym vs baja laboral → CIERRE: 'La inversión más rentable que puedes hacer'", duracion: "30 seg", tags: ["precio","inversión","salud"], viralidad: "Reencuadrar el precio como inversión elimina la objeción más común del sector.", vistas: "400K-5M" },
+      { titulo: "Reto: 30 días de cambio — te acompaño", plataforma: "TikTok", estructura: "GANCHO: 'Empieza hoy conmigo, 30 días de reto' → DESARROLLO: Día 1 del reto con instrucciones claras → CIERRE: 'Comenta DÍA 1 y te mando el plan gratis'", duracion: "30 seg", tags: ["reto","comunidad","lead magnet"], viralidad: "Los retos crean comunidad y comentarios masivos que disparan el algoritmo.", vistas: "500K-10M" },
+      { titulo: "Tour del gimnasio — lo que no ves en las fotos", plataforma: "Instagram", estructura: "GANCHO: 'Las fotos mienten. Mira cómo es realmente nuestro gym' → DESARROLLO: Tour honesto con zonas, equipamiento y ambiente → CIERRE: 'Ven un día gratis y juzga tú mismo'", duracion: "45 seg", tags: ["tour","honestidad","visita gratis"], viralidad: "La transparencia genera confianza. La visita gratuita elimina el riesgo percibido.", vistas: "100K-1M" }
+    ],
+    patrones: [
+      "Las transformaciones reales de clientes generan más leads que cualquier otro formato",
+      "Los retos con mecánica de comentarios (comenta DÍA 1) disparan el alcance algorítmico",
+      "Corregir errores técnicos comunes genera shares masivos entre practicantes",
+      "La autenticidad sin filtros conecta mejor con el segmento no deportista que quiere empezar",
+      "Reencuadrar el precio como inversión en salud reduce la objeción de coste en un 50%"
+    ]
+  },
+  moda: {
+    label: "Moda y ropa",
+    videos: [
+      { titulo: "5 outfits con 3 prendas — matematica de armario", plataforma: "TikTok", estructura: "GANCHO: '3 prendas, 5 looks distintos' → DESARROLLO: Cada combinación en 5 segundos → CIERRE: Link en bio para comprar las prendas", duracion: "30 seg", tags: ["combinaciones","armario cápsula","utilidad"], viralidad: "La utilidad práctica genera guardados masivos. Las personas guardan lo que van a usar.", vistas: "500K-10M" },
+      { titulo: "Lo que cuesta este look desglosado", plataforma: "Instagram", estructura: "GANCHO: 'Este look cuesta X€ en total' → DESARROLLO: Prenda por prenda con precio → CIERRE: 'Todo disponible en nuestra tienda'", duracion: "20-30 seg", tags: ["precio desglosado","accesible","transparencia"], viralidad: "Mostrar el precio total elimina la percepción de caro y facilita la decisión de compra.", vistas: "200K-3M" },
+      { titulo: "Cómo combinar esto que nadie sabe llevar", plataforma: "TikTok", estructura: "GANCHO: 'Tienes esto en el armario y no sabes cómo llevarlo' → DESARROLLO: 3 formas de combinarlo de menos a más atrevido → CIERRE: Dónde encontrarlo en tu tienda", duracion: "30-45 seg", tags: ["estilismo","educación","problemas reales"], viralidad: "Solucionar un problema concreto del espectador genera fidelización y compra inmediata.", vistas: "300K-5M" },
+      { titulo: "Unboxing de nueva colección en tiempo real", plataforma: "Instagram", estructura: "GANCHO: 'Acaba de llegar la colección, te lo enseño TODO' → DESARROLLO: Unboxing pieza a pieza con reacción genuina → CIERRE: 'Disponible ahora, link en bio'", duracion: "60 seg", tags: ["unboxing","nueva colección","exclusividad"], viralidad: "El unboxing genera anticipación y urgencia. La novedad activa el impulso de compra.", vistas: "100K-2M" },
+      { titulo: "La diferencia entre calidad buena y mala — te lo demuestro", plataforma: "TikTok", estructura: "GANCHO: 'Cómo saber si una prenda es de calidad en 10 segundos' → DESARROLLO: Tests visuales comparando materiales → CIERRE: 'Nuestras prendas pasan todos estos tests'", duracion: "30 seg", tags: ["calidad","educación","diferenciación"], viralidad: "Educar sobre calidad genera confianza y justifica precio superior frente a fast fashion.", vistas: "500K-8M" },
+      { titulo: "Outfits para cada tipo de cuerpo", plataforma: "Instagram", estructura: "GANCHO: 'Para tu tipo de cuerpo, estos son los mejores looks' → DESARROLLO: 3-4 tipos de cuerpo con recomendaciones específicas → CIERRE: 'Cuéntame tu tipo y te ayudo en DM'", duracion: "45 seg", tags: ["inclusividad","personalización","cuerpo"], viralidad: "La personalización genera identificación masiva. Cada persona siente que le hablan a ella.", vistas: "300K-5M" }
+    ],
+    patrones: [
+      "Los videos de combinaciones guardables (outfits con pocas prendas) lideran en saves",
+      "Mostrar el precio desglosado aumenta la conversión porque elimina el miedo al gasto total",
+      "El contenido educativo sobre calidad posiciona la marca frente al fast fashion",
+      "Los unboxings de nueva colección generan ventas inmediatas en las primeras 24 horas",
+      "La personalización por tipo de cuerpo dispara los comentarios y DMs de potenciales clientes"
+    ]
+  },
+  educacion: {
+    label: "Educación y academias",
+    videos: [
+      { titulo: "Aprende esto en 60 segundos que tardé años en dominar", plataforma: "TikTok", estructura: "GANCHO: 'En 60 segundos te enseño lo que tardé 3 años en aprender' → DESARROLLO: Concepto clave explicado de forma ultracompacta → CIERRE: 'Si quieres profundizar, tengo un curso gratuito'", duracion: "60 seg", tags: ["tip rápido","expertise","lead magnet"], viralidad: "Dar valor real gratis genera confianza masiva. Si el tip gratis es bueno, el curso de pago vende solo.", vistas: "500K-10M" },
+      { titulo: "El error más caro que cometen los estudiantes de X", plataforma: "Instagram", estructura: "GANCHO: 'Este error le cuesta a la gente meses de progreso' → DESARROLLO: El error, por qué ocurre, cómo evitarlo → CIERRE: 'En mi academia lo hacemos diferente'", duracion: "30-45 seg", tags: ["errores","metodología","diferenciación"], viralidad: "Identificar errores comunes genera reconocimiento masivo: 'Eso me pasa a mí'.", vistas: "300K-5M" },
+      { titulo: "De 0 a nivel avanzado: el camino real", plataforma: "TikTok", estructura: "GANCHO: 'Nadie te dice cuánto tiempo lleva realmente aprender X' → DESARROLLO: Roadmap honesto con etapas y tiempos reales → CIERRE: 'Te acompaño en cada etapa'", duracion: "45-60 seg", tags: ["roadmap","honestidad","expectativas"], viralidad: "Gestionar expectativas con honestidad genera confianza y reduce el abandono.", vistas: "200K-4M" },
+      { titulo: "Resultado de alumno en X semanas", plataforma: "Instagram", estructura: "GANCHO: 'En X semanas este alumno pasó de Y a Z' → DESARROLLO: Historia del alumno con datos reales → CIERRE: 'Empieza tu historia aquí'", duracion: "30-45 seg", tags: ["caso de éxito","transformación","prueba social"], viralidad: "Los casos de éxito específicos y verificables son el mejor argumento de venta en educación.", vistas: "200K-3M" },
+      { titulo: "Por qué fracasan el 80% de las personas que aprenden X solos", plataforma: "TikTok", estructura: "GANCHO: '8 de cada 10 que aprenden solos abandonan en el primer mes' → DESARROLLO: Las 3 razones principales → CIERRE: 'La academia existe precisamente para esto'", duracion: "45 seg", tags: ["autoestudio","abandono","solución"], viralidad: "Identificar el problema del autoestudio justifica perfectamente el valor de la academia.", vistas: "400K-6M" },
+      { titulo: "Clase de muestra en 2 minutos", plataforma: "Instagram", estructura: "GANCHO: 'Así es una clase en nuestra academia, sin editar' → DESARROLLO: Fragmento real de clase con metodología visible → CIERRE: 'Primera clase gratuita, reserva aquí'", duracion: "60-90 seg", tags: ["clase muestra","transparencia","metodología"], viralidad: "Ver antes de comprar elimina el riesgo percibido y aumenta la conversión.", vistas: "100K-1M" }
+    ],
+    patrones: [
+      "Los tips de valor real gratuito generan más leads que cualquier anuncio pagado",
+      "Los casos de éxito con datos concretos (semanas, nivel) tienen el mayor índice de conversión",
+      "Atacar el autoestudio como opción inferior justifica el precio de la academia",
+      "Los roadmaps honestos con tiempos reales generan comentarios masivos y guardados",
+      "Las clases de muestra sin editar tienen mayor credibilidad que los videos producidos"
+    ]
+  },
+  legal: {
+    label: "Abogados y despachos",
+    videos: [
+      { titulo: "3 derechos que tienes y probablemente no conoces", plataforma: "TikTok", estructura: "GANCHO: '3 derechos que tienes en España y nadie te ha explicado' → DESARROLLO: Cada derecho explicado en lenguaje simple → CIERRE: '¿Te han vulnerado alguno? Cuéntame en comentarios'", duracion: "45-60 seg", tags: ["derechos","educación legal","lenguaje simple"], viralidad: "La ignorancia legal es universal. Dar información útil y gratuita posiciona como referente.", vistas: "500K-10M" },
+      { titulo: "Este error en tu contrato puede costarte miles", plataforma: "Instagram", estructura: "GANCHO: 'Antes de firmar cualquier contrato, busca esto' → DESARROLLO: Cláusula abusiva real con explicación visual → CIERRE: 'Revisión de contratos gratuita en consulta'", duracion: "30-45 seg", tags: ["contratos","errores","protección"], viralidad: "El miedo a firmar algo perjudicial es universal. El contenido protector genera acción inmediata.", vistas: "300K-5M" },
+      { titulo: "Qué hacer en los primeros 24h si tienes un accidente", plataforma: "TikTok", estructura: "GANCHO: 'Si tienes un accidente, estas son las primeras 24 horas' → DESARROLLO: Checklist paso a paso con urgencia → CIERRE: 'Si ya pasó, llama ahora'", duracion: "45 seg", tags: ["urgencia","protocolo","accidentes"], viralidad: "El contenido de protocolo se guarda masivamente. La gente guarda lo que puede necesitar.", vistas: "400K-6M" },
+      { titulo: "Desmontando el mito más caro del sector", plataforma: "Instagram", estructura: "GANCHO: 'El mito que le cuesta dinero a miles de personas' → DESARROLLO: Mito legal concreto + la realidad jurídica → CIERRE: 'Consulta gratuita si tienes dudas'", duracion: "30-45 seg", tags: ["mitos","educación","confianza"], viralidad: "Desmontar mitos genera autoridad inmediata y shares entre personas afectadas.", vistas: "200K-4M" },
+      { titulo: "Un caso real que ganamos — cómo lo hicimos", plataforma: "TikTok", estructura: "GANCHO: 'Este cliente vino sin esperanza. 6 meses después:' → DESARROLLO: Caso anonimizado con estrategia jurídica simplificada → CIERRE: 'Si tu caso es similar, háblame'", duracion: "60 seg", tags: ["caso real","resultado","estrategia"], viralidad: "Los casos ganados son la prueba más poderosa en servicios legales donde el resultado lo es todo.", vistas: "200K-3M" },
+      { titulo: "Cuánto cuesta realmente un abogado — sin letra pequeña", plataforma: "Instagram", estructura: "GANCHO: 'La pregunta que nadie responde: ¿cuánto cobra un abogado?' → DESARROLLO: Distintos modelos de honorarios explicados → CIERRE: 'Primera consulta gratuita, sin compromiso'", duracion: "45 seg", tags: ["precio","transparencia","honorarios"], viralidad: "La transparencia sobre honorarios es tan rara que genera viralidad por sí sola.", vistas: "300K-4M" }
+    ],
+    patrones: [
+      "El contenido educativo en lenguaje no jurídico tiene 10x más alcance que el contenido técnico",
+      "Los protocolos de emergencia (qué hacer si...) generan los mayores índices de guardado",
+      "Desmontar mitos legales posiciona como referente y genera shares orgánicos masivos",
+      "Los casos reales anonimizados con resultado concreto son el formato de mayor conversión",
+      "La transparencia sobre honorarios es diferenciadora en un sector conocido por la opacidad"
+    ]
+  },
+  ecommerce: {
+    label: "E-commerce y tiendas online",
+    videos: [
+      { titulo: "Unboxing de pedido real con reacción genuina", plataforma: "TikTok", estructura: "GANCHO: Caja llegando a casa de un cliente real → DESARROLLO: Unboxing completo con reacción auténtica → CIERRE: 'Haz tu pedido y sé el próximo'", duracion: "30-45 seg", tags: ["unboxing","cliente real","UGC"], viralidad: "El contenido generado por usuarios reales tiene más credibilidad que cualquier publicidad.", vistas: "200K-5M" },
+      { titulo: "Cómo se hace tu pedido desde que lo pagas", plataforma: "Instagram", estructura: "GANCHO: 'Das a pagar y 3 minutos después empieza esto' → DESARROLLO: Proceso real de picking, packing y envío → CIERRE: 'Tu pedido merece este cuidado'", duracion: "45-60 seg", tags: ["behind the scenes","logística","confianza"], viralidad: "Ver el cuidado detrás del proceso genera apego al producto antes de recibirlo.", vistas: "300K-4M" },
+      { titulo: "Por qué este producto tiene 2.000 reseñas de 5 estrellas", plataforma: "TikTok", estructura: "GANCHO: '2.000 personas con 5 estrellas no pueden estar todas equivocadas' → DESARROLLO: Las razones reales con testimonios → CIERRE: 'Sé el 2.001'", duracion: "30 seg", tags: ["reseñas","prueba social","bestseller"], viralidad: "La prueba social masiva elimina la fricción de compra más eficazmente que cualquier descuento.", vistas: "400K-6M" },
+      { titulo: "Comparativa honesta con el producto de la competencia", plataforma: "Instagram", estructura: "GANCHO: 'Comparamos nuestro producto con el más vendido de Amazon' → DESARROLLO: Test real lado a lado con criterios objetivos → CIERRE: 'Tú decides con información real'", duracion: "45-60 seg", tags: ["comparativa","honestidad","diferenciación"], viralidad: "La valentía de compararse genera credibilidad masiva. Si ganas el test, es argumento perfecto.", vistas: "500K-8M" },
+      { titulo: "El producto que no esperabas necesitar", plataforma: "TikTok", estructura: "GANCHO: 'No sabía que necesitaba esto hasta que lo usé' → DESARROLLO: Problema que resuelve en situación real → CIERRE: 'Disponible ahora con envío en 24h'", duracion: "20-30 seg", tags: ["problema-solución","descubrimiento","urgencia"], viralidad: "Crear conciencia de un problema que el espectador tenía sin saberlo es la fórmula de compra impulsiva.", vistas: "500K-10M" },
+      { titulo: "Devolución sin preguntas — te mostramos cómo", plataforma: "Instagram", estructura: "GANCHO: 'Si no te gusta, te devolvemos el dinero. Sin preguntas. Mira cómo' → DESARROLLO: Proceso real de devolución simplificado → CIERRE: 'Compra sin riesgo'", duracion: "30 seg", tags: ["garantía","confianza","sin riesgo"], viralidad: "Eliminar el riesgo percibido de compra es el mayor activador de conversión en e-commerce.", vistas: "200K-3M" }
+    ],
+    patrones: [
+      "El UGC (contenido de clientes reales) convierte 4x más que el contenido de marca producido",
+      "Mostrar el proceso logístico interno genera confianza y reduce el abandono de carrito",
+      "La prueba social con números concretos (X reseñas) supera a los descuentos como activador",
+      "Las comparativas honestas con competidores posicionan y generan shares masivos",
+      "Eliminar el riesgo de compra (devolución fácil) es el mayor catalizador de primera compra"
+    ]
+  },
+  salud: {
+    label: "Salud y clínicas médicas",
+    videos: [
+      { titulo: "Síntoma que no deberías ignorar — explicado por médico", plataforma: "TikTok", estructura: "GANCHO: 'Si tienes este síntoma más de 3 días, ve al médico' → DESARROLLO: Explicación del síntoma, causas posibles y cuándo preocuparse → CIERRE: 'En nuestra clínica te atendemos hoy'", duracion: "45-60 seg", tags: ["síntomas","educación médica","urgencia"], viralidad: "El miedo a la enfermedad no diagnosticada es el mayor motivador de acción en salud.", vistas: "1M-20M" },
+      { titulo: "Lo que tu médico no te dice en 10 minutos de consulta", plataforma: "Instagram", estructura: "GANCHO: 'En consulta estándar hay cosas que no da tiempo a explicar' → DESARROLLO: 3 recomendaciones preventivas que raramente se dan → CIERRE: 'Aquí tenemos tiempo para ti'", duracion: "45 seg", tags: ["prevención","tiempo","atención personalizada"], viralidad: "Criticar el sistema (con tacto) y ofrecer la alternativa es fórmula de diferenciación perfecta.", vistas: "500K-8M" },
+      { titulo: "Mito médico que la gente cree a pies juntillas", plataforma: "TikTok", estructura: "GANCHO: 'Esto que crees sobre tu salud es falso' → DESARROLLO: El mito, por qué existe, la realidad científica → CIERRE: 'Si tienes dudas, consúltanos'", duracion: "30-45 seg", tags: ["mitos","evidencia científica","educación"], viralidad: "Los mitos de salud son universales y el desmentirlos genera shares masivos de 'mira esto'.", vistas: "800K-15M" },
+      { titulo: "Un día en nuestra clínica — lo que no ves", plataforma: "Instagram", estructura: "GANCHO: 'Esto es lo que pasa en nuestra clínica antes de que llegues' → DESARROLLO: Protocolos de limpieza, preparación, equipo → CIERRE: 'Tu salud merece este nivel'", duracion: "45-60 seg", tags: ["behind the scenes","higiene","confianza"], viralidad: "Mostrar los protocolos invisibles genera confianza que ningún anuncio puede transmitir.", vistas: "200K-3M" },
+      { titulo: "Resultado de paciente en tratamiento de X semanas", plataforma: "TikTok", estructura: "GANCHO: 'Este paciente llegó con X. X semanas después:' → DESARROLLO: Evolución con datos de seguimiento real → CIERRE: 'Primera consulta gratuita'", duracion: "45 seg", tags: ["caso real","resultado","seguimiento"], viralidad: "Los resultados reales con seguimiento cronológico son el formato de mayor conversión en salud.", vistas: "300K-5M" },
+      { titulo: "Cómo elegir una buena clínica — lo que debes preguntar", plataforma: "Instagram", estructura: "GANCHO: 'Antes de elegir clínica, pregunta estas 5 cosas' → DESARROLLO: Las preguntas clave con respuestas correctas → CIERRE: 'En nuestra clínica respondemos sí a todas'", duracion: "45 seg", tags: ["guía","decisión de compra","diferenciación"], viralidad: "Educar sobre cómo elegir y luego demostrar que tú cumples los criterios es venta consultiva perfecta.", vistas: "300K-4M" }
+    ],
+    patrones: [
+      "El contenido sobre síntomas concretos es el de mayor alcance orgánico en el sector salud",
+      "Desmontar mitos médicos genera shares masivos entre personas con familiares afectados",
+      "Mostrar protocolos de higiene y preparación genera la confianza que los anuncios no consiguen",
+      "Los casos reales con seguimiento temporal tienen mayor tasa de conversión que los testimonios estáticos",
+      "Educar sobre cómo elegir bien un especialista y luego cumplir los criterios es la estrategia más efectiva"
+    ]
+  },
+  viajes: {
+    label: "Agencias de viajes",
+    videos: [
+      { titulo: "Lo que cuesta este viaje desglosado — sin sorpresas", plataforma: "TikTok", estructura: "GANCHO: 'Este viaje a Tailandia cuesta X€ por persona todo incluido. Te explico qué lleva' → DESARROLLO: Desglose completo vuelo, hotel, actividades, seguros → CIERRE: 'Presupuesto personalizado gratis'", duracion: "45-60 seg", tags: ["precio desglosado","transparencia","todo incluido"], viralidad: "La transparencia total sobre precios en viajes genera confianza inmediata y elimina la desconfianza.", vistas: "500K-8M" },
+      { titulo: "Destino que nadie conoce y que cambiará tu vida", plataforma: "Instagram", estructura: "GANCHO: 'Hay un destino que el 99% no conoce y es increíble' → DESARROLLO: Imágenes impactantes del destino con datos prácticos → CIERRE: 'Te organizamos el viaje completo'", duracion: "30-45 seg", tags: ["destino desconocido","FOMO","descubrimiento"], viralidad: "La exclusividad del conocimiento oculto genera shares masivos y guardados para el futuro.", vistas: "1M-15M" },
+      { titulo: "Errores que arruinan las vacaciones — experiencia real", plataforma: "TikTok", estructura: "GANCHO: 'Estos 3 errores arruinaron las vacaciones de un cliente' → DESARROLLO: Casos reales con el error y las consecuencias → CIERRE: 'Con agencia, nada de esto pasa'", duracion: "45 seg", tags: ["errores","agencia vs solo","protección"], viralidad: "El miedo a arruinar las vacaciones (gran inversión emocional y económica) motiva buscar protección.", vistas: "400K-6M" },
+      { titulo: "Diferencia entre reservar solo vs con agencia", plataforma: "Instagram", estructura: "GANCHO: 'Por qué cada vez más gente vuelve a usar agencias de viajes' → DESARROLLO: Comparativa real en 5 puntos con casos concretos → CIERRE: 'Te atendemos en persona o por WhatsApp'", duracion: "45-60 seg", tags: ["agencia vs online","valor añadido","personalización"], viralidad: "Justificar el valor de la agencia frente a Booking/Airbnb es el argumento más compartido del sector.", vistas: "300K-5M" },
+      { titulo: "Itinerario completo de 10 días en X — gratis", plataforma: "TikTok", estructura: "GANCHO: 'Te regalo el itinerario completo de 10 días en Japón' → DESARROLLO: Día a día resumido con tips insider → CIERRE: 'Si quieres que te lo organicemos, escríbenos'", duracion: "60-90 seg", tags: ["itinerario","valor gratuito","lead magnet"], viralidad: "El lead magnet de itinerario completo genera guardados masivos y DMs de potenciales clientes.", vistas: "500K-10M" },
+      { titulo: "Lo que no ves en las fotos del hotel", plataforma: "Instagram", estructura: "GANCHO: 'La habitación de las fotos vs la que te dan — qué puedes exigir' → DESARROLLO: Trucos para evitar engaños + derechos del viajero → CIERRE: 'Con nosotros, siempre sabes lo que recibes'", duracion: "45 seg", tags: ["hoteles","derechos","protección"], viralidad: "El miedo a la decepción hotelera es universal. El contenido protector se guarda masivamente.", vistas: "400K-7M" }
+    ],
+    patrones: [
+      "La transparencia de precios desglosados genera más leads que las ofertas genéricas",
+      "Los destinos desconocidos con imágenes impactantes son el formato de mayor viralidad orgánica",
+      "Atacar los errores del viaje independiente justifica el valor de la agencia mejor que cualquier anuncio",
+      "Los itinerarios gratuitos completos son el lead magnet con mayor tasa de conversión en viajes",
+      "El contenido protector (cómo evitar engaños) genera fidelización y shares masivos"
+    ]
+  },
+  tecnologia: {
+    label: "Tecnología y software",
+    videos: [
+      { titulo: "Herramienta de IA que nadie conoce y que te ahorra horas", plataforma: "TikTok", estructura: "GANCHO: 'Esta herramienta de IA me ahorra 3 horas al día y cuesta 0€' → DESARROLLO: Demo real en pantalla paso a paso → CIERRE: 'Link en bio para probarla'", duracion: "45-60 seg", tags: ["IA","productividad","gratis"], viralidad: "Las herramientas gratuitas que ahorran tiempo se comparten masivamente entre profesionales.", vistas: "1M-20M" },
+      { titulo: "Error de seguridad que el 90% comete con su contraseña", plataforma: "Instagram", estructura: "GANCHO: 'Tu contraseña probablemente no es segura. Mira por qué' → DESARROLLO: Cómo funcionan los ataques + la contraseña segura real → CIERRE: 'En nuestra empresa protegemos tus datos así'", duracion: "30-45 seg", tags: ["seguridad","errores","educación"], viralidad: "El miedo a ser hackeado es universal y el contenido de protección se comparte entre círculos laborales.", vistas: "500K-8M" },
+      { titulo: "Demo de producto en 60 segundos — sin tecnicismos", plataforma: "TikTok", estructura: "GANCHO: 'Te explico qué hace nuestro software en 60 segundos sin palabras técnicas' → DESARROLLO: Demo visual con caso de uso real → CIERRE: 'Prueba gratuita 14 días, sin tarjeta'", duracion: "60 seg", tags: ["demo","sin tecnicismos","prueba gratuita"], viralidad: "Hacer accesible lo complejo democratiza el producto y amplía el mercado potencial.", vistas: "200K-4M" },
+      { titulo: "Antes y después de automatizar este proceso", plataforma: "Instagram", estructura: "GANCHO: 'Esto tardaba 4 horas. Ahora: 8 minutos' → DESARROLLO: Comparativa visual del proceso manual vs automatizado → CIERRE: 'Te implementamos esto en tu empresa'", duracion: "30-45 seg", tags: ["automatización","ahorro de tiempo","ROI"], viralidad: "El tiempo es el recurso más valorado. Ver cómo se recupera genera deseo inmediato.", vistas: "300K-5M" },
+      { titulo: "Por qué tu empresa necesita X herramienta ya", plataforma: "TikTok", estructura: "GANCHO: 'Si tu empresa hace X sin esta herramienta, estás perdiendo dinero' → DESARROLLO: Coste real de no tenerla con datos → CIERRE: 'Calculadora de ROI gratuita en bio'", duracion: "45 seg", tags: ["FOMO empresarial","ROI","urgencia"], viralidad: "El coste de la inacción expresado en dinero concreto activa la urgencia en decisores empresariales.", vistas: "200K-4M" },
+      { titulo: "Cómo empresas como la tuya usan X para crecer", plataforma: "Instagram", estructura: "GANCHO: 'Esta empresa de X sector duplicó sus ventas en 6 meses con nuestro software' → DESARROLLO: Caso de éxito con datos y métricas → CIERRE: 'Tu empresa puede ser la siguiente'", duracion: "45-60 seg", tags: ["caso de éxito","sector específico","crecimiento"], viralidad: "Los casos de éxito del mismo sector generan identificación inmediata y acortan el ciclo de venta.", vistas: "200K-3M" }
+    ],
+    patrones: [
+      "Las demos sin tecnicismos amplían el mercado potencial y generan el mayor número de pruebas gratuitas",
+      "El contenido de herramientas gratuitas de IA es el de mayor viralidad orgánica en tecnología",
+      "Cuantificar el coste de la inacción en dinero concreto activa decisores empresariales",
+      "Los casos de éxito del mismo sector tienen mayor tasa de conversión que los casos genéricos",
+      "Las comparativas antes/después de automatización generan el mayor número de leads cualificados"
+    ]
+  },
+  arquitectura: {
+    label: "Arquitectura e interiorismo",
+    videos: [
+      { titulo: "Transformación de espacio vacío a hogar — timelapse completo", plataforma: "TikTok", estructura: "GANCHO: Espacio vacío y gris → DESARROLLO: Timelapse de reforma completa con música → CIERRE: Resultado final con precio del proyecto", duracion: "30-45 seg", tags: ["timelapse","transformación","resultado"], viralidad: "La transformación visual dramática es el contenido más compartido en diseño. Activa el deseo.", vistas: "500K-10M" },
+      { titulo: "Cómo aprovechar X m2 cuando crees que no hay espacio", plataforma: "Instagram", estructura: "GANCHO: 'Te dicen que con 40m2 no puedes hacer nada. Mentira' → DESARROLLO: Soluciones de diseño concretas para espacios pequeños → CIERRE: 'Te diseñamos tu espacio gratis en primera consulta'", duracion: "45-60 seg", tags: ["espacios pequeños","soluciones","educación"], viralidad: "El problema de espacio es universal en ciudades. Las soluciones visuales generan guardados masivos.", vistas: "400K-8M" },
+      { titulo: "Lo que cuesta realmente reformar un piso en 2025", plataforma: "TikTok", estructura: "GANCHO: 'Reforma de 60m2 en Madrid: coste real, sin sorpresas' → DESARROLLO: Desglose por partidas con cifras reales → CIERRE: 'Presupuesto sin compromiso en 48h'", duracion: "45-60 seg", tags: ["precio real","reforma","desglose"], viralidad: "La transparencia sobre precios de reforma es extremadamente rara y genera viralidad por diferenciación.", vistas: "500K-8M" },
+      { titulo: "3 errores de diseño que hacen tu casa más pequeña", plataforma: "Instagram", estructura: "GANCHO: 'Inconscientemente haces tu casa más pequeña con esto' → DESARROLLO: Cada error con solución visual → CIERRE: 'Nosotros evitamos estos errores desde el diseño'", duracion: "30-45 seg", tags: ["errores de diseño","truco visual","educación"], viralidad: "Los errores que la gente comete sin saberlo generan reconocimiento masivo y ganas de corregir.", vistas: "300K-6M" },
+      { titulo: "De presupuesto a obra terminada — el proceso real", plataforma: "TikTok", estructura: "GANCHO: 'Nadie te explica qué pasa entre dar el sí y tener tu casa terminada' → DESARROLLO: Las fases reales con tiempos y puntos de decisión → CIERRE: 'Empezamos con una conversación gratuita'", duracion: "60 seg", tags: ["proceso","fases","transparencia"], viralidad: "Desmitificar el proceso de reforma reduce el miedo a contratar y acelera la decisión.", vistas: "200K-3M" },
+      { titulo: "Tendencias de interiorismo 2025 que debes conocer", plataforma: "Instagram", estructura: "GANCHO: 'Lo que va a dominar los hogares en 2025' → DESARROLLO: 4-5 tendencias con imágenes inspiradoras → CIERRE: 'Aplicamos estas tendencias a tu presupuesto'", duracion: "45-60 seg", tags: ["tendencias","2025","inspiración"], viralidad: "El contenido de tendencias anuales se comparte masivamente al inicio de año entre personas en proceso de reforma.", vistas: "300K-5M" }
+    ],
+    patrones: [
+      "Los timelapses de transformación completa lideran en compartidos y guardados en todo el sector",
+      "La transparencia sobre precios reales de reforma diferencia y genera leads cualificados",
+      "Las soluciones para espacios pequeños tienen el mayor alcance orgánico en ciudades",
+      "Los errores de diseño inconscientes generan reconocimiento masivo y urgencia de consulta",
+      "El contenido de tendencias anuales multiplica el alcance al inicio de temporada"
+    ]
+  },
+  coaching: {
+    label: "Coaching y desarrollo personal",
+    videos: [
+      { titulo: "El hábito de 5 minutos que cambió mi vida — con prueba", plataforma: "TikTok", estructura: "GANCHO: 'Llevo 365 días haciendo esto 5 minutos al día. El resultado:' → DESARROLLO: El hábito explicado + resultados medibles → CIERRE: 'En mi programa te acompaño a crear el tuyo'", duracion: "45-60 seg", tags: ["hábitos","consistencia","prueba personal"], viralidad: "Los resultados personales verificables con tiempo concreto son el formato de mayor credibilidad en coaching.", vistas: "500K-15M" },
+      { titulo: "Lo que nadie te dice sobre alcanzar tus metas", plataforma: "Instagram", estructura: "GANCHO: 'Por qué el 92% no alcanza sus metas y qué hacen diferente el 8%' → DESARROLLO: La diferencia real basada en evidencia → CIERRE: 'Yo trabajo con el 8%'", duracion: "45 seg", tags: ["metas","estadísticas","diferenciación"], viralidad: "Las estadísticas de fracaso generan identificación y el deseo de pertenecer al grupo del éxito.", vistas: "400K-8M" },
+      { titulo: "Sesión de coaching real — con permiso del cliente", plataforma: "TikTok", estructura: "GANCHO: 'Con permiso de mi cliente, te muestro cómo es una sesión real' → DESARROLLO: Fragmento real de sesión (problema + herramienta + breakthrough) → CIERRE: 'Primera sesión gratuita de diagnóstico'", duracion: "60-90 seg", tags: ["transparencia","sesión real","metodología"], viralidad: "Ver el proceso real elimina el misterio del coaching y convierte escépticos en clientes.", vistas: "200K-4M" },
+      { titulo: "El patrón mental que sabotea tu éxito", plataforma: "Instagram", estructura: "GANCHO: 'Hay un patrón que el 80% tiene y que sabotea todo lo que intentas' → DESARROLLO: El patrón explicado con ejemplos cotidianos → CIERRE: 'En consulta gratuita identificamos el tuyo'", duracion: "45-60 seg", tags: ["psicología","patrones","autoconocimiento"], viralidad: "El reconocimiento de uno mismo en el patrón descrito genera comentarios masivos de identificación.", vistas: "500K-10M" },
+      { titulo: "Resultado de cliente en 90 días de programa", plataforma: "TikTok", estructura: "GANCHO: 'Este cliente llegó paralizado. 90 días después:' → DESARROLLO: Transformación real con palabras del propio cliente → CIERRE: 'Tu proceso puede empezar hoy'", duracion: "45-60 seg", tags: ["transformación","90 días","testimonio"], viralidad: "Los testimonios de transformación con tiempo concreto son el argumento de venta más poderoso en coaching.", vistas: "300K-6M" },
+      { titulo: "3 preguntas que te cambiarán la perspectiva hoy", plataforma: "Instagram", estructura: "GANCHO: 'Hazte estas 3 preguntas y tu día cambia' → DESARROLLO: Cada pregunta con espacio para reflexionar → CIERRE: 'Guarda esto y respóndelas esta noche'", duracion: "30-45 seg", tags: ["reflexión","valor inmediato","guardable"], viralidad: "El contenido guardable de alta utilidad inmediata genera el mayor índice de saves en desarrollo personal.", vistas: "400K-8M" }
+    ],
+    patrones: [
+      "Los resultados personales propios con tiempo concreto son más creíbles que cualquier testimonio de cliente",
+      "Los patrones mentales con los que la audiencia se identifica generan el mayor volumen de comentarios",
+      "Las preguntas reflexivas de alto valor generan el mayor índice de guardados en desarrollo personal",
+      "Mostrar una sesión real elimina el escepticismo y convierte al escéptico en cliente",
+      "Los testimonios de 90 días con voz del propio cliente son el formato de mayor conversión"
+    ]
+  },
+  mascotas: {
+    label: "Mascotas y veterinaria",
+    videos: [
+      { titulo: "Síntoma en tu mascota que no debes ignorar", plataforma: "TikTok", estructura: "GANCHO: 'Si tu perro/gato hace esto, ve al vet esta semana' → DESARROLLO: El síntoma explicado con imágenes → CIERRE: 'En nuestra clínica atendemos urgencias'", duracion: "30-45 seg", tags: ["salud animal","síntomas","urgencia"], viralidad: "El amor por las mascotas convierte cualquier amenaza a su salud en acción inmediata.", vistas: "1M-20M" },
+      { titulo: "Lo que come tu mascota vs lo que debería comer", plataforma: "Instagram", estructura: "GANCHO: 'El pienso que compras probablemente no es lo que crees' → DESARROLLO: Cómo leer etiquetas + qué buscar → CIERRE: 'En nuestra tienda solo vendemos lo mejor'", duracion: "45-60 seg", tags: ["nutrición","educación","pienso"], viralidad: "La culpa de no dar lo mejor a tu mascota genera acción de compra inmediata.", vistas: "500K-8M" },
+      { titulo: "Un día en la clínica veterinaria — detrás de las puertas", plataforma: "TikTok", estructura: "GANCHO: 'Lo que pasa con tu mascota cuando se queda en la clínica' → DESARROLLO: El cuidado real, equipo, protocolos → CIERRE: 'Tu mascota está en las mejores manos'", duracion: "45-60 seg", tags: ["behind the scenes","confianza","cuidado"], viralidad: "La ansiedad de dejar la mascota en la clínica es universal. Verla bien cuidada genera fidelización.", vistas: "500K-8M" },
+      { titulo: "Transformación de animal rescatado en 3 meses", plataforma: "Instagram", estructura: "GANCHO: 'Llegó así. 3 meses después, míralo' → DESARROLLO: Foto inicial + evolución semana a semana → CIERRE: 'Si tienes una mascota necesitada, podemos ayudar'", duracion: "30-45 seg", tags: ["rescate","transformación","emoción"], viralidad: "Las transformaciones de animales rescatados son el contenido más compartido en redes en este sector.", vistas: "2M-30M" },
+      { titulo: "Por qué la revisión anual puede salvar la vida de tu mascota", plataforma: "TikTok", estructura: "GANCHO: 'La revisión que el 70% salta y que puede costar la vida de tu mascota' → DESARROLLO: Qué detecta una revisión anual + casos reales → CIERRE: 'Reserva la revisión de este año'", duracion: "45 seg", tags: ["prevención","revisión anual","urgencia"], viralidad: "El miedo combinado con el amor por la mascota es el activador más poderoso del sector.", vistas: "300K-6M" },
+      { titulo: "Cuánto cuesta realmente tener un perro al año", plataforma: "Instagram", estructura: "GANCHO: 'La cuenta real de tener un perro: nadie te la dice antes de adoptarlo' → DESARROLLO: Desglose de gastos anuales reales → CIERRE: 'Te ayudamos a planificarlo con un seguro'", duracion: "45-60 seg", tags: ["costes reales","planificación","seguro"], viralidad: "La información que nadie da antes de adoptar genera shares masivos entre futuros dueños.", vistas: "400K-7M" }
+    ],
+    patrones: [
+      "Los síntomas de salud animal son el contenido con mayor alcance orgánico en todo el sector mascotas",
+      "Las transformaciones de animales rescatados generan la mayor viralidad y shares emocionales",
+      "Mostrar el cuidado real en la clínica reduce la ansiedad y genera fidelización a largo plazo",
+      "El contenido sobre costes reales de tener mascota genera leads de futuros dueños cualificados",
+      "La culpa de no alimentar bien a la mascota es el activador de compra más poderoso del sector"
+    ]
+  },
+  reformas: {
+    label: "Construcción y reformas",
+    videos: [
+      { titulo: "Reforma completa de baño en 60 segundos — timelapse real", plataforma: "TikTok", estructura: "GANCHO: Baño viejo y deteriorado → DESARROLLO: Timelapse completo de la reforma → CIERRE: Resultado + precio del proyecto + contacto", duracion: "30-45 seg", tags: ["timelapse","reforma","resultado"], viralidad: "La transformación rápida en timelapse es el formato de mayor viralidad en reformas. Activa el deseo.", vistas: "500K-10M" },
+      { titulo: "Por qué tu reforma costará más de lo presupuestado", plataforma: "Instagram", estructura: "GANCHO: 'La verdad que las reformistas no te dicen al presupuestar' → DESARROLLO: Los costes ocultos más comunes con cifras → CIERRE: 'Nosotros presupuestamos sin letra pequeña'", duracion: "45-60 seg", tags: ["costes ocultos","transparencia","diferenciación"], viralidad: "El miedo al engaño en reformas es universal. La honestidad sobre costes diferencia radicalmente.", vistas: "500K-8M" },
+      { titulo: "Lo que descubrimos al abrir esta pared", plataforma: "TikTok", estructura: "GANCHO: 'Al abrir esta pared encontramos algo que el dueño no esperaba' → DESARROLLO: El descubrimiento real + cómo lo resolvimos → CIERRE: 'Sin experiencia esto habría sido un desastre'", duracion: "45-60 seg", tags: ["detrás de las paredes","experiencia","problemas reales"], viralidad: "El suspense de lo desconocido y la resolución de problemas generan engagement masivo.", vistas: "1M-15M" },
+      { titulo: "Materiales baratos vs materiales de calidad — la diferencia en 5 años", plataforma: "Instagram", estructura: "GANCHO: 'Lo que pasa cuando ahorras en materiales de reforma' → DESARROLLO: Comparativa visual de deterioro real → CIERRE: 'El ahorro falso cuesta más a largo plazo'", duracion: "30-45 seg", tags: ["materiales","calidad","largo plazo"], viralidad: "La comparativa visual de deterioro justifica la inversión en calidad mejor que cualquier argumento.", vistas: "300K-5M" },
+      { titulo: "Cómo detectar a una empresa de reformas mala antes de contratar", plataforma: "TikTok", estructura: "GANCHO: '5 señales de que la empresa de reformas te va a dar problemas' → DESARROLLO: Cada señal con explicación práctica → CIERRE: 'En nuestra empresa no encontrarás ninguna de estas señales'", duracion: "45-60 seg", tags: ["señales de alarma","protección","guía"], viralidad: "Educar sobre cómo detectar malos profesionales y luego demostrar que tú no eres uno genera conversión.", vistas: "500K-8M" },
+      { titulo: "Cuánto tiempo lleva realmente reformar X", plataforma: "Instagram", estructura: "GANCHO: 'Te dicen 3 semanas. La realidad de los plazos en reformas' → DESARROLLO: Plazos reales por tipo de reforma con variables → CIERRE: 'Nosotros cumplimos plazos. Te lo garantizamos por escrito'", duracion: "45 seg", tags: ["plazos","honestidad","garantía"], viralidad: "Los retrasos en reformas son el problema número 1. La garantía de plazo es diferenciación absoluta.", vistas: "400K-6M" }
+    ],
+    patrones: [
+      "Los timelapses de transformación completa son el formato de mayor viralidad y compartidos",
+      "La honestidad sobre costes ocultos diferencia radicalmente en un sector con mala reputación",
+      "El suspense de 'lo que encontramos al abrir' genera engagement orgánico masivo",
+      "Educar sobre cómo detectar malos profesionales y luego cumplir los criterios convierte escépticos",
+      "La garantía de plazos por escrito es el argumento diferenciador más poderoso del sector"
+    ]
+  }
+};
+
+let selectedSector = '';
+let platforms = { tiktok: true, instagram: true };
+
+document.querySelectorAll('.sector-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    selectedSector = btn.dataset.sector;
+    document.getElementById('customSector').value = '';
+    updateBtn();
+  });
+});
+
+document.getElementById('customSector').addEventListener('input', function() {
+  document.querySelectorAll('.sector-btn').forEach(b => b.classList.remove('active'));
+  selectedSector = this.value.trim() ? 'custom' : '';
+  updateBtn();
+});
+
+function togglePlatform(p) {
+  platforms[p] = !platforms[p];
+  if (!platforms.tiktok && !platforms.instagram) platforms[p] = true;
+  document.getElementById('btnTT').className = 'platform-btn' + (platforms.tiktok ? ' active-tt' : '');
+  document.getElementById('btnIG').className = 'platform-btn' + (platforms.instagram ? ' active-ig' : '');
+}
+
+function updateBtn() {
+  const btn = document.getElementById('analyzeBtn');
+  const s = selectedSector || document.getElementById('customSector').value.trim();
+  if (s) {
+    btn.disabled = false;
+    const label = DATA[selectedSector] ? DATA[selectedSector].label : document.getElementById('customSector').value.trim();
+    btn.textContent = 'Analizar tendencias → ' + label;
+  } else {
+    btn.disabled = true;
+    btn.textContent = 'Selecciona un sector para comenzar';
+  }
+}
+
+function showResults() {
+  const customVal = document.getElementById('customSector').value.trim();
+  const sectorKey = selectedSector !== 'custom' ? selectedSector : null;
+  const sectorData = sectorKey ? DATA[sectorKey] : null;
+
+  if (sectorData) {
+    let videos = sectorData.videos;
+    if (!platforms.tiktok) videos = videos.filter(v => v.plataforma === 'Instagram');
+    if (!platforms.instagram) videos = videos.filter(v => v.plataforma === 'TikTok');
+
+    const platLabel = [platforms.tiktok ? 'TikTok' : null, platforms.instagram ? 'Instagram Reels' : null].filter(Boolean).join(' + ');
+    document.getElementById('resultsTitle').textContent = sectorData.label;
+    document.getElementById('resultsBadge').textContent = platLabel;
+
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+    videos.forEach(v => {
+      const isIG = v.plataforma === 'Instagram';
+      const card = document.createElement('div');
+      card.className = 'video-card';
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-title">${v.titulo}</div>
+          <span class="plat-badge ${isIG ? 'ig' : 'tt'}">${isIG ? '◈ Instagram' : '▶ TikTok'}</span>
+        </div>
+        <div class="card-structure">${v.estructura}</div>
+        <div class="card-why">${v.viralidad}</div>
+        <div class="card-footer">
+          ${v.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+          <span class="tag stat">⏱ ${v.duracion}</span>
+          <span class="tag stat">👁 ${v.vistas}</span>
+        </div>`;
+      container.appendChild(card);
+    });
+
+    const list = document.getElementById('insightsList');
+    list.innerHTML = sectorData.patrones.map(p => `<li>${p}</li>`).join('');
+    document.getElementById('insightsBox').style.display = 'block';
+  } else {
+    // Sector personalizado — mostrar mensaje genérico útil
+    const platLabel = [platforms.tiktok ? 'TikTok' : null, platforms.instagram ? 'Instagram Reels' : null].filter(Boolean).join(' + ');
+    document.getElementById('resultsTitle').textContent = customVal;
+    document.getElementById('resultsBadge').textContent = platLabel;
+
+    const container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+    const genericVideos = [
+      { titulo: "Antes y después — transformación de cliente real", plataforma: "TikTok", estructura: "GANCHO: Situación inicial del cliente → DESARROLLO: El proceso o tratamiento → CIERRE: Resultado + CTA", duracion: "30-45 seg", tags: ["transformación","resultado real"], viralidad: "Las transformaciones son el formato universal de mayor viralidad en cualquier sector.", vistas: "200K-5M" },
+      { titulo: "Lo que nadie te dice sobre este sector", plataforma: "Instagram", estructura: "GANCHO: Dato sorprendente o mito → DESARROLLO: La verdad con evidencia → CIERRE: Cómo tú lo haces diferente", duracion: "30-45 seg", tags: ["educación","confianza","diferenciación"], viralidad: "Posicionarse como el experto honesto genera confianza masiva en cualquier industria.", vistas: "300K-5M" },
+      { titulo: "Un día en nuestro negocio — sin filtros", plataforma: "TikTok", estructura: "GANCHO: Momento del día llamativo → DESARROLLO: Behind the scenes real → CIERRE: CTA natural", duracion: "45-60 seg", tags: ["autenticidad","behind the scenes"], viralidad: "La autenticidad genera conexión emocional con la marca en todos los sectores.", vistas: "100K-3M" },
+      { titulo: "El error más caro que cometen nuestros clientes", plataforma: "Instagram", estructura: "GANCHO: El error enunciado → DESARROLLO: Por qué ocurre + consecuencias → CIERRE: Cómo lo evitas con nosotros", duracion: "30-45 seg", tags: ["errores","educación","solución"], viralidad: "Los errores del cliente generan reconocimiento y urgencia de solución.", vistas: "200K-4M" },
+      { titulo: "Precio real desglosado — sin letra pequeña", plataforma: "TikTok", estructura: "GANCHO: El precio total → DESARROLLO: Qué incluye cada parte → CIERRE: Por qué vale ese precio", duracion: "30-45 seg", tags: ["transparencia","precio","valor"], viralidad: "La transparencia sobre precios es tan rara que genera viralidad por diferenciación.", vistas: "200K-4M" },
+      { titulo: "Testimonio de cliente en sus propias palabras", plataforma: "Instagram", estructura: "GANCHO: Frase impactante del cliente → DESARROLLO: Su historia real → CIERRE: CTA para vivir la misma experiencia", duracion: "30-60 seg", tags: ["testimonio","prueba social","emoción"], viralidad: "La voz auténtica del cliente convierte mejor que cualquier argumento de venta propio.", vistas: "100K-2M" }
+    ];
+    genericVideos.forEach(v => {
+      const isIG = v.plataforma === 'Instagram';
+      const card = document.createElement('div');
+      card.className = 'video-card';
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-title">${v.titulo}</div>
+          <span class="plat-badge ${isIG ? 'ig' : 'tt'}">${isIG ? '◈ Instagram' : '▶ TikTok'}</span>
+        </div>
+        <div class="card-structure">${v.estructura}</div>
+        <div class="card-why">${v.viralidad}</div>
+        <div class="card-footer">
+          ${v.tags.map(t => `<span class="tag">${t}</span>`).join('')}
+          <span class="tag stat">⏱ ${v.duracion}</span>
+          <span class="tag stat">👁 ${v.vistas}</span>
+        </div>`;
+      container.appendChild(card);
+    });
+
+    const list = document.getElementById('insightsList');
+    list.innerHTML = [
+      "Las transformaciones reales de clientes son el formato universal de mayor viralidad",
+      "El contenido educativo que desmonta mitos posiciona como referente en cualquier sector",
+      "La autenticidad sin filtros genera más engagement que el contenido producido profesionalmente",
+      "La transparencia sobre precios diferencia en mercados donde nadie habla de dinero abiertamente",
+      "Los testimonios en voz del propio cliente convierten mejor que cualquier argumento de marca"
+    ].map(p => `<li>${p}</li>`).join('');
+    document.getElementById('insightsBox').style.display = 'block';
+  }
+
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetSearch() {
+  document.getElementById('results').style.display = 'none';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+</script>
+</body>
+</html>
