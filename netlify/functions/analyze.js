@@ -10,15 +10,18 @@ exports.handler = async (event) => {
   }
 
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: 'Sin API key' }) };
+  if (!apiKey) return {
+    statusCode: 500,
+    headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+    body: JSON.stringify({ error: 'Sin API key' })
+  };
 
   try {
-    const incoming = JSON.parse(event.body);
-    const messages = incoming.messages || incoming;
+    const { messages } = JSON.parse(event.body);
 
     const payload = JSON.stringify({
       model: 'claude-haiku-4-5',
-      max_tokens: 800,
+      max_tokens: 1500,
       messages: messages
     });
 
@@ -49,6 +52,10 @@ exports.handler = async (event) => {
       body: result.body
     };
   } catch (err) {
-    return { statusCode: 500, headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' }, body: JSON.stringify({ error: err.message }) };
+    return {
+      statusCode: 500,
+      headers: { 'Access-Control-Allow-Origin': '*', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ error: err.message })
+    };
   }
 };
